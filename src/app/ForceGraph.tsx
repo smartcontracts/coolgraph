@@ -16,6 +16,8 @@ export default function ForceGraph() {
     TEAMIES: '0x1ef5ab6cd122b9b0301355f7c9e0e0afdddeab7909c7ebf16ca5f36fb372c5ea',
     PRIZES: '0xa3e8b65d54255a29f7ad193e536ebd099ec0b3cdefae13ee932648b0976459fe',
     PLACEMENTS: '0x67733d0412e6d7cb661f38e3869391e3074fa83e8df37d8268948d932a8212d5',
+    ORGS: '0x6dfff69c36a728ee4fca6024f193cde3d6d8afa1b66e1b1685762ab2fef827bf',
+    CONTRIBUTORS: '0xd00ca737466d87f08537ff23f5a6849fafed65a2f92ba6a45266b21707764644',
   }
 
   const [graph, setGraph] = useState({ nodes: [], links: [] })
@@ -65,6 +67,8 @@ export default function ForceGraph() {
         const teamies = matches(SCHEMAS.TEAMIES)
         const prizes = matches(SCHEMAS.PRIZES)
         const placements = matches(SCHEMAS.PLACEMENTS)
+        const orgs = matches(SCHEMAS.ORGS)
+        const contributors = matches(SCHEMAS.CONTRIBUTORS)
 
         setGraph({
           nodes: [
@@ -102,7 +106,14 @@ export default function ForceGraph() {
                 name: `${placement.decodedDataJson[0].value.value} x ${ethers.BigNumber.from(placement.decodedDataJson[3].value.value).toNumber()}\n(Placement)`,
                 type: placement.schemaId,
               }
-            })
+            }),
+            ...orgs.map((org: any) => {
+              return {
+                id: org.id,
+                name: `${org.decodedDataJson[0].value.value}\n(Organization)`,
+                type: org.schemaId,
+              }
+            }),
           ] as any,
           links: [
             ...attendees.map((attendee: any) => {
@@ -139,7 +150,14 @@ export default function ForceGraph() {
                 target: placement.decodedDataJson[4].value.value,
                 type: placement.schemaId,
               }
-            })
+            }),
+            ...contributors.map((contributor: any) => {
+              return {
+                source: contributor.recipient,
+                target: contributor.decodedDataJson[0].value.value,
+                type: contributor.schemaId,
+              }
+            }),
           ] as any,
         })
       }
