@@ -6,7 +6,6 @@ import { gql, useQuery } from '@apollo/client';
 import SpriteText from 'three-spritetext'
 import * as THREE from 'three'
 import { ethers } from 'ethers'
-const blockies = require('ethereum-blockies')
 const ForceGraph3D = dynamic(() => import('react-force-graph-3d'), {
   ssr: false,
 })
@@ -150,8 +149,13 @@ export default function Graph() {
     },
   )
 
+  let blockies: any
+  if (typeof document !== 'undefined') {
+    blockies = require('ethereum-blockies')
+  }
+
   // Generate one blockie to hack around a bug in the library.
-  blockies.create({ seed: 'fixies!' })
+  blockies?.create({ seed: 'fixies!' })
 
   return (
     <main>
@@ -163,7 +167,7 @@ export default function Graph() {
         linkOpacity={0.5}
         nodeThreeObject={(node: any) => {
           if (node.type === SCHEMAS.ATTENDEE) {
-            const icon = blockies.create({ seed: node.id })
+            const icon = blockies?.create({ seed: node.id })
             const texture = new THREE.TextureLoader().load(icon.toDataURL('image/png'))
             texture.colorSpace = THREE.SRGBColorSpace
             const material = new THREE.SpriteMaterial({ map: texture })
