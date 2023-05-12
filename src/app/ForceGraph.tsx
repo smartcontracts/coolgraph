@@ -1,16 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import dynamic from 'next/dynamic'
+import { useEffect, useRef, useState } from 'react'
 import { gql, useQuery } from '@apollo/client';
 import SpriteText from 'three-spritetext'
 import * as THREE from 'three'
 import { ethers } from 'ethers'
-const ForceGraph3D = dynamic(() => import('react-force-graph-3d'), {
-  ssr: false,
-})
+import ForceGraph3D, { ForceGraphMethods } from "react-force-graph-3d";
 
-export default function Graph() {
+export default function ForceGraph() {
   const ATTESTER = '0xc0d4a22A93dA6a2b530650ae3A8094B7497c86F7'
   const SCHEMAS = {
     HACKATHON: '0xa2a91e9bf1ecbf377ae908a23e3a59f9f92bc659e0490d3ec87768a3a0549456',
@@ -157,9 +154,28 @@ export default function Graph() {
   // Generate one blockie to hack around a bug in the library.
   blockies?.create({ seed: 'fixies!' })
 
+  const fgRef = useRef<ForceGraphMethods>()
+  const distance = 300
+  useEffect(() => {
+    if (!fgRef.current) return
+    fgRef.current.cameraPosition({ z: distance });
+
+    // camera orbit
+    let angle = 0;
+    setInterval(() => {
+      if (!fgRef.current) return
+      fgRef.current.cameraPosition({
+        x: distance * Math.sin(angle),
+        z: distance * Math.cos(angle)
+      });
+      angle += Math.PI / 900;
+    }, 10);
+  }, []);
+
   return (
     <main>
       <ForceGraph3D
+        ref={fgRef}
         graphData={graph}
         nodeAutoColorBy="type"
         linkAutoColorBy="type"

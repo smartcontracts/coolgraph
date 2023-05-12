@@ -1,6 +1,6 @@
 'use client'
 
-import Graph from './graph'
+import ForceGraph from './ForceGraphWrapper'
 import { ApolloProvider, ApolloClient, InMemoryCache } from '@apollo/client';
 
 export default function Home() {
@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <ApolloProvider client={client}>
       <main>
-        <Graph></Graph>
+        <ForceGraph></ForceGraph>
       </main>
     </ApolloProvider>
   )
