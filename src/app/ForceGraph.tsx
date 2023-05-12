@@ -179,7 +179,7 @@ export default function ForceGraph() {
         graphData={graph}
         nodeAutoColorBy="type"
         linkAutoColorBy="type"
-        linkWidth={0.1}
+        linkWidth={0.2}
         linkOpacity={0.5}
         nodeThreeObject={(node: any) => {
           if (node.type === SCHEMAS.ATTENDEE) {
