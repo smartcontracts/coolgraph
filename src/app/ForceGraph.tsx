@@ -18,6 +18,7 @@ export default function ForceGraph() {
     PLACEMENTS: '0x67733d0412e6d7cb661f38e3869391e3074fa83e8df37d8268948d932a8212d5',
     ORGS: '0x6dfff69c36a728ee4fca6024f193cde3d6d8afa1b66e1b1685762ab2fef827bf',
     CONTRIBUTORS: '0xd00ca737466d87f08537ff23f5a6849fafed65a2f92ba6a45266b21707764644',
+    WINNERS: '0x781d32e210584f0f5ba392dd163cb9fe145f2d6c74cac7c3edbdc4c0f475bcf6',
   }
 
   const [graph, setGraph] = useState({ nodes: [], links: [] })
@@ -47,7 +48,7 @@ export default function ForceGraph() {
           }
         }
       },
-      onCompleted: (data) => {
+      onCompleted: async (data) => {
         const matches = (id: string) => {
           return data.attestations
             .filter((attestation: any) => {
@@ -69,6 +70,7 @@ export default function ForceGraph() {
         const placements = matches(SCHEMAS.PLACEMENTS)
         const orgs = matches(SCHEMAS.ORGS)
         const contributors = matches(SCHEMAS.CONTRIBUTORS)
+        const winners = matches(SCHEMAS.WINNERS)
 
         setGraph({
           nodes: [
@@ -103,7 +105,7 @@ export default function ForceGraph() {
             ...placements.map((placement: any) => {
               return {
                 id: placement.id,
-                name: `${placement.decodedDataJson[0].value.value} x ${ethers.BigNumber.from(placement.decodedDataJson[3].value.value).toNumber()}\n(Placement)`,
+                name: `${placement.decodedDataJson[0].value.value} x${ethers.BigNumber.from(placement.decodedDataJson[3].value.value).toNumber()}\n(Placement)`,
                 type: placement.schemaId,
               }
             }),
@@ -158,6 +160,13 @@ export default function ForceGraph() {
                 type: contributor.schemaId,
               }
             }),
+            ...winners.map((winner: any) => {
+              return {
+                source: winner.decodedDataJson[0].value.value,
+                target: winner.decodedDataJson[1].value.value,
+                type: winner.schemaId,
+              }
+            }),
           ] as any,
         })
       }
@@ -173,7 +182,7 @@ export default function ForceGraph() {
   blockies?.create({ seed: 'fixies!' })
 
   const fgRef = useRef<ForceGraphMethods>()
-  const distance = 300
+  const distance = 500
   useEffect(() => {
     if (!fgRef.current) return
     fgRef.current.cameraPosition({ z: distance });
@@ -202,7 +211,8 @@ export default function ForceGraph() {
         nodeThreeObject={(node: any) => {
           if (node.type === SCHEMAS.ATTENDEE) {
             const icon = blockies?.create({ seed: node.id })
-            const texture = new THREE.TextureLoader().load(icon.toDataURL('image/png'))
+            const data = icon?.toDataURL('image/png')
+            const texture = new THREE.TextureLoader().load(data)
             texture.colorSpace = THREE.SRGBColorSpace
             const material = new THREE.SpriteMaterial({ map: texture })
             const sprite = new THREE.Sprite(material)
