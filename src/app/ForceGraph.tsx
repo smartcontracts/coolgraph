@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { gql, useQuery } from '@apollo/client';
 import SpriteText from 'three-spritetext'
 import * as THREE from 'three'
@@ -86,6 +86,13 @@ export default function ForceGraph() {
   // Generate one blockie to hack around a bug in the library.
   blockies?.create({ seed: 'fixies!' })
 
+  // Open stuff on click.
+  const handleClick = useCallback((node: any) => {
+    if (node.type === 'address') {
+      window.open(`https://etherscan.io/address/${node.id}`)
+    }
+  }, [])
+
   return (
     <main>
       <ForceGraph3D
@@ -97,6 +104,7 @@ export default function ForceGraph() {
         linkDirectionalArrowLength={3.5}
         linkDirectionalArrowRelPos={1}
         linkDirectionalParticles={1}
+        onNodeClick={handleClick}
         nodeThreeObject={(node: any) => {
           if (node.type === 'address') {
             const icon = blockies?.create({ seed: node.id })
