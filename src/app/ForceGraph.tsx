@@ -94,6 +94,8 @@ export default function ForceGraph() {
         linkAutoColorBy="type"
         linkWidth={0.2}
         linkOpacity={0.5}
+        linkDirectionalArrowLength={3.5}
+        linkDirectionalArrowRelPos={1}
         nodeThreeObject={(node: any) => {
           if (node.type === 'address') {
             const icon = blockies?.create({ seed: node.id })
