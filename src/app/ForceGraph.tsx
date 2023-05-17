@@ -22,7 +22,7 @@ export default function ForceGraph() {
       }
     `,
     {
-      pollInterval: 5000,
+      pollInterval: 60000,
       variables: {
         where: {
           schemaId: {
