@@ -103,7 +103,7 @@ export default function ForceGraph() {
   // Open stuff on click.
   const handleClick = useCallback((node: any) => {
     if (node.type === 'address') {
-      window.open(`https://etherscan.io/address/${node.id}`)
+      window.open(`https://optimism-goerli.easscan.org/address/${node.id}`)
     }
   }, [])
 
