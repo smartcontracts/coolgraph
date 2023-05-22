@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { gql, useQuery, useLazyQuery } from '@apollo/client'
 import SpriteText from 'three-spritetext'
 import * as THREE from 'three'
@@ -9,11 +9,11 @@ import ForceGraph3D from 'react-force-graph-3d'
 import { abi as EAS } from '@ethereum-attestation-service/eas-contracts/artifacts/contracts/EAS.sol/EAS.json'
 import {GraphData} from "force-graph";
 
-export default function ForceGraph() {
-  const rpc = 'https://goerli.optimism.io'
-  const provider = new ethers.providers.StaticJsonRpcProvider(rpc)
-  const eas = new ethers.Contract('0x1a5650d0ecbca349dd84bafa85790e3e6955eb84', EAS, provider)
+const rpc = 'https://goerli.optimism.io'
+const provider = new ethers.providers.StaticJsonRpcProvider(rpc)
+const eas = new ethers.Contract('0x1a5650d0ecbca349dd84bafa85790e3e6955eb84', EAS, provider)
 
+export default function ForceGraph() {
   const schema = '0xab332d1e664f25fab6e9f383ccd036b8e32c299711d8dc071e866a69851f2e3a'
   const [tmpGraph, setTmpGraph] = useState<GraphData>({ nodes: [], links: [] })
   const [graph, setGraph] = useState<GraphData>({ nodes: [], links: [] })
