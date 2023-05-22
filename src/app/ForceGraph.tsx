@@ -8,6 +8,7 @@ import { ethers } from 'ethers'
 import ForceGraph3D from 'react-force-graph-3d'
 import { abi as EAS } from '@ethereum-attestation-service/eas-contracts/artifacts/contracts/EAS.sol/EAS.json'
 import {GraphData} from "force-graph";
+import {Object3D} from "three";
 
 const rpc = 'https://goerli.optimism.io'
 const provider = new ethers.providers.StaticJsonRpcProvider(rpc)
@@ -87,7 +88,7 @@ export default function ForceGraph() {
   )
 
   const ENS_NAMES_QUERY = gql`
-  query Attestations($where: EnsNameWhereInput) {
+  query EnsNames($where: EnsNameWhereInput) {
     ensNames(where: $where) {
       id
       name
@@ -181,12 +182,24 @@ export default function ForceGraph() {
             const material = new THREE.SpriteMaterial({ map: texture })
             const sprite = new THREE.Sprite(material)
             sprite.scale.set(8, 8, 0)
-            return sprite
+            sprite.renderOrder = 1
+
+            const spriteText = new SpriteText(node.name)
+            spriteText.color = 'white'
+            spriteText.textHeight = 1.5
+            spriteText.position.set(0, -6, 0)
+            spriteText.renderOrder = 2
+
+            const container = new Object3D()
+            container.add(sprite)
+            container.add(spriteText)
+
+            return container
           } else {
-            const sprite = new SpriteText(node.name);
-            sprite.color = node.color;
-            sprite.textHeight = 4;
-            return sprite;
+            const sprite = new SpriteText(node.name)
+            sprite.color = node.color
+            sprite.textHeight = 4
+            return sprite
           }
         }}
       />
