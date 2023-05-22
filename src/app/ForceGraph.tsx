@@ -17,7 +17,7 @@ export default function ForceGraph() {
   const schema = '0xab332d1e664f25fab6e9f383ccd036b8e32c299711d8dc071e866a69851f2e3a'
   const [tmpGraph, setTmpGraph] = useState<GraphData>({ nodes: [], links: [] })
   const [graph, setGraph] = useState<GraphData>({ nodes: [], links: [] })
-  const { refetch,  } = useQuery(
+  const { refetch } = useQuery(
     gql`
       query Query($where: AttestationWhereInput) {
         attestations(where: $where) {
@@ -77,6 +77,7 @@ export default function ForceGraph() {
                 source: attestation.attester,
                 target: attestation.recipient,
                 type: attestation.schemaId,
+                uid: attestation.id
               }
             }),
           ] as any,
@@ -99,7 +100,7 @@ export default function ForceGraph() {
 
   useEffect(() => {
     if (tmpGraph.nodes.length > 0) {
-      const addresses = tmpGraph.nodes.map((node: any) => node.id)
+      const addresses = tmpGraph.nodes.map((node) => node.id)
       fetchEnsNames({
         variables: {
           where: {
@@ -120,8 +121,8 @@ export default function ForceGraph() {
       )
 
       setGraph(() => {
-        const updatedNodes = tmpGraph.nodes.map((node: any) => {
-          const ensName = ensNamesMap.get(node.id.toLowerCase())
+        const updatedNodes = tmpGraph.nodes.map((node) => {
+          const ensName = ensNamesMap.get(String(node.id).toLowerCase())
           return ensName ? { ...node, name: ensName } : node
         })
 
@@ -169,8 +170,11 @@ export default function ForceGraph() {
         linkDirectionalArrowLength={3.5}
         linkDirectionalArrowRelPos={1}
         linkDirectionalParticles={1}
+        onLinkClick={(link)=>{
+          window.open(`https://optimism-goerli.easscan.org/attestation/view/${link.uid}`)
+        }}
         onNodeClick={handleClick}
-        nodeThreeObject={(node: any) => {
+        nodeThreeObject={(node) => {
           if (node.type === 'address') {
             const icon = blockies?.create({ seed: node.id })
             const data = icon?.toDataURL('image/png')
