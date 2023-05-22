@@ -70,7 +70,7 @@ export default function ForceGraph() {
                 type: 'address'
               }
             }),
-          ] as any,
+          ],
           links: [
             ...attestations.map((attestation: any) => {
               return {
@@ -80,13 +80,11 @@ export default function ForceGraph() {
                 uid: attestation.id
               }
             }),
-          ] as any,
+          ],
         })
       }
     },
   )
-
-
 
   const ENS_NAMES_QUERY = gql`
   query Attestations($where: EnsNameWhereInput) {
