@@ -1,12 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { gql, useQuery } from '@apollo/client'
+import { gql, useQuery, useLazyQuery } from '@apollo/client'
 import SpriteText from 'three-spritetext'
 import * as THREE from 'three'
 import { ethers } from 'ethers'
-import ForceGraph3D, { ForceGraphMethods } from 'react-force-graph-3d'
+import ForceGraph3D from 'react-force-graph-3d'
 import { abi as EAS } from '@ethereum-attestation-service/eas-contracts/artifacts/contracts/EAS.sol/EAS.json'
+import {GraphData} from "force-graph";
 
 export default function ForceGraph() {
   const rpc = 'https://goerli.optimism.io'
@@ -14,8 +15,9 @@ export default function ForceGraph() {
   const eas = new ethers.Contract('0x1a5650d0ecbca349dd84bafa85790e3e6955eb84', EAS, provider)
 
   const schema = '0xab332d1e664f25fab6e9f383ccd036b8e32c299711d8dc071e866a69851f2e3a'
-  const [graph, setGraph] = useState({ nodes: [], links: [] })
-  const { refetch } = useQuery(
+  const [tmpGraph, setTmpGraph] = useState<GraphData>({ nodes: [], links: [] })
+  const [graph, setGraph] = useState<GraphData>({ nodes: [], links: [] })
+  const { refetch,  } = useQuery(
     gql`
       query Query($where: AttestationWhereInput) {
         attestations(where: $where) {
@@ -59,7 +61,7 @@ export default function ForceGraph() {
             }, new Set()
           )
 
-        setGraph({
+        setTmpGraph({
           nodes: [
             ...Array.from(addresses).map((address: string) => {
               return {
@@ -82,6 +84,55 @@ export default function ForceGraph() {
       }
     },
   )
+
+
+
+  const ENS_NAMES_QUERY = gql`
+  query Attestations($where: EnsNameWhereInput) {
+    ensNames(where: $where) {
+      id
+      name
+    }
+  }`;
+
+  const [fetchEnsNames, { data: ensNamesData }] = useLazyQuery(ENS_NAMES_QUERY)
+
+  useEffect(() => {
+    if (tmpGraph.nodes.length > 0) {
+      const addresses = tmpGraph.nodes.map((node: any) => node.id)
+      fetchEnsNames({
+        variables: {
+          where: {
+            id: {
+              in: addresses,
+              mode: 'insensitive',
+            },
+          },
+        },
+      })
+    }
+  }, [tmpGraph, fetchEnsNames])
+
+  useEffect(() => {
+    if (ensNamesData) {
+      const ensNamesMap = new Map(
+        ensNamesData.ensNames.map((ensName: any) => [ensName.id.toLowerCase(), ensName.name])
+      )
+
+      setGraph(() => {
+        const updatedNodes = tmpGraph.nodes.map((node: any) => {
+          const ensName = ensNamesMap.get(node.id.toLowerCase())
+          return ensName ? { ...node, name: ensName } : node
+        })
+
+        return {
+          nodes: updatedNodes,
+          links: tmpGraph.links,
+        }
+      })
+    }
+  }, [ensNamesData])
+
 
   // Refetch on new attestations.
   useEffect(() => {
