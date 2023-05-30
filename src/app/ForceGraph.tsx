@@ -1,20 +1,23 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { gql, useQuery } from '@apollo/client'
+import { useCallback, useEffect, useState } from 'react'
+import { gql, useQuery, useLazyQuery } from '@apollo/client'
 import SpriteText from 'three-spritetext'
 import * as THREE from 'three'
 import { ethers } from 'ethers'
-import ForceGraph3D, { ForceGraphMethods } from 'react-force-graph-3d'
+import ForceGraph3D from 'react-force-graph-3d'
 import { abi as EAS } from '@ethereum-attestation-service/eas-contracts/artifacts/contracts/EAS.sol/EAS.json'
+import {GraphData} from "force-graph";
+import {Object3D} from "three";
+
+const rpc = 'https://goerli.optimism.io'
+const provider = new ethers.providers.StaticJsonRpcProvider(rpc)
+const eas = new ethers.Contract('0x1a5650d0ecbca349dd84bafa85790e3e6955eb84', EAS, provider)
 
 export default function ForceGraph() {
-  const rpc = 'https://goerli.optimism.io'
-  const provider = new ethers.providers.StaticJsonRpcProvider(rpc)
-  const eas = new ethers.Contract('0x1a5650d0ecbca349dd84bafa85790e3e6955eb84', EAS, provider)
-
   const schema = '0xab332d1e664f25fab6e9f383ccd036b8e32c299711d8dc071e866a69851f2e3a'
-  const [graph, setGraph] = useState({ nodes: [], links: [] })
+  const [tmpGraph, setTmpGraph] = useState<GraphData>({ nodes: [], links: [] })
+  const [graph, setGraph] = useState<GraphData>({ nodes: [], links: [] })
   const { refetch } = useQuery(
     gql`
       query Query($where: AttestationWhereInput) {
@@ -59,7 +62,7 @@ export default function ForceGraph() {
             }, new Set()
           )
 
-        setGraph({
+        setTmpGraph({
           nodes: [
             ...Array.from(addresses).map((address: string) => {
               return {
@@ -68,20 +71,68 @@ export default function ForceGraph() {
                 type: 'address'
               }
             }),
-          ] as any,
+          ],
           links: [
             ...attestations.map((attestation: any) => {
               return {
                 source: attestation.attester,
                 target: attestation.recipient,
                 type: attestation.schemaId,
+                uid: attestation.id
               }
             }),
-          ] as any,
+          ],
         })
       }
     },
   )
+
+  const ENS_NAMES_QUERY = gql`
+  query EnsNames($where: EnsNameWhereInput) {
+    ensNames(where: $where) {
+      id
+      name
+    }
+  }`;
+
+  const [fetchEnsNames, { data: ensNamesData }] = useLazyQuery(ENS_NAMES_QUERY)
+
+  useEffect(() => {
+    if (tmpGraph.nodes.length > 0) {
+      const addresses = tmpGraph.nodes.map((node) => node.id)
+      fetchEnsNames({
+        variables: {
+          where: {
+            id: {
+              in: addresses,
+              mode: 'insensitive',
+            },
+          },
+        },
+      })
+    }
+  }, [tmpGraph, fetchEnsNames])
+
+  useEffect(() => {
+    if (ensNamesData) {
+      const ensNamesMap = new Map(
+        ensNamesData.ensNames.map((ensName: any) => [ensName.id.toLowerCase(), ensName.name])
+      )
+
+      setGraph(() => {
+        const updatedNodes = tmpGraph.nodes.map((node) => {
+          const ensName = ensNamesMap.get(String(node.id).toLowerCase())
+          return ensName ? { ...node, name: ensName } : node
+        })
+
+        return {
+          nodes: updatedNodes,
+          links: tmpGraph.links,
+        }
+      })
+    }
+  }, [ensNamesData])
+
 
   // Refetch on new attestations.
   useEffect(() => {
@@ -103,7 +154,7 @@ export default function ForceGraph() {
   // Open stuff on click.
   const handleClick = useCallback((node: any) => {
     if (node.type === 'address') {
-      window.open(`https://etherscan.io/address/${node.id}`)
+      window.open(`https://optimism-goerli.easscan.org/address/${node.id}`)
     }
   }, [])
 
@@ -118,8 +169,11 @@ export default function ForceGraph() {
         linkDirectionalArrowLength={3.5}
         linkDirectionalArrowRelPos={1}
         linkDirectionalParticles={1}
+        onLinkClick={(link)=>{
+          window.open(`https://optimism-goerli.easscan.org/attestation/view/${link.uid}`)
+        }}
         onNodeClick={handleClick}
-        nodeThreeObject={(node: any) => {
+        nodeThreeObject={(node) => {
           if (node.type === 'address') {
             const icon = blockies?.create({ seed: node.id })
             const data = icon?.toDataURL('image/png')
@@ -128,12 +182,24 @@ export default function ForceGraph() {
             const material = new THREE.SpriteMaterial({ map: texture })
             const sprite = new THREE.Sprite(material)
             sprite.scale.set(8, 8, 0)
-            return sprite
+            sprite.renderOrder = 1
+
+            const spriteText = new SpriteText(node.name)
+            spriteText.color = 'white'
+            spriteText.textHeight = 1.5
+            spriteText.position.set(0, -6, 0)
+            spriteText.renderOrder = 2
+
+            const container = new Object3D()
+            container.add(sprite)
+            container.add(spriteText)
+
+            return container
           } else {
-            const sprite = new SpriteText(node.name);
-            sprite.color = node.color;
-            sprite.textHeight = 4;
-            return sprite;
+            const sprite = new SpriteText(node.name)
+            sprite.color = node.color
+            sprite.textHeight = 4
+            return sprite
           }
         }}
       />
